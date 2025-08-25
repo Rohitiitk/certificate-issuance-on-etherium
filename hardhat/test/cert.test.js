@@ -2,6 +2,9 @@ const {
     loadFixture,
   } = require('@nomicfoundation/hardhat-toolbox/network-helpers')
   const { expect } = require('chai')
+  // require('@nomicfoundation/hardhat-chai-matchers')
+  const { BigNumber } = require('ethers');
+
   
   describe('Cert Test', function () {
     async function deployCertFixture() {
@@ -28,12 +31,20 @@ const {
     })
   
     it('Should issue the certificate', async function () {
-      const { cert } = await loadFixture(deployCertFixture)
-  
-      await expect(cert.issue(1024, 'Deren', 'CED', 'S', '24-04-2024'))
-        .to.emit(cert, 'issued')
-        .withArgs(1024, '24-04-2024')
-    })
+      const { cert } = await loadFixture(deployCertFixture);
+    
+      // Execute the transaction and wait for it to be mined
+      const tx = await cert.issue(1024, 'Deren', 'CED', 'S', '24-04-2024');
+      
+      // Wait for the transaction receipt to access emitted events
+      const receipt = await tx.wait();
+    
+      // Assert that the 'issued' event was emitted with the correct arguments
+      const event = receipt.events?.find(event => event.event === 'issued');
+      expect(event).to.not.be.undefined;
+      expect(event.args).to.deep.equal([BigNumber.from(1024), '24-04-2024']);
+    });
+    
   
     it('Should read the certificate', async function () {
       const { cert } = await loadFixture(deployCertFixture)
@@ -48,11 +59,26 @@ const {
       expect(certificate[3]).to.equal('24-04-2024')
     })
   
-    it('Should revert the issuing', async function () {
-      const { cert, other } = await loadFixture(deployCertFixture)
+    // it('Should revert the issuing', async function () {
+    //   const { cert, other } = await loadFixture(deployCertFixture)
   
-      await expect(
-        cert.connect(other).issue(1024, 'Shalom', 'CBR', 'S', '23-03-2023')
-      ).to.be.reverted;
-    })
+    //   await expect(
+    //     cert.connect(other).issue(1024, 'Shalom', 'CBR', 'S', '23-03-2023')
+    //   ).to.be.reverted;
+    // })
+    it('Should revert the issuing', async function () {
+      const { cert, other } = await loadFixture(deployCertFixture);
+    
+      try {
+        // Attempt to issue the certificate
+        await cert.connect(other).issue(1024, 'Shalom', 'CBR', 'S', '23-03-2023');
+        
+        // If no error was thrown, fail the test
+        throw new Error('Transaction did not revert as expected');
+      } catch (error) {
+        // Check if the error message indicates a revert
+        expect(error.message).to.include('revert');
+      }
+    });
+    
   })

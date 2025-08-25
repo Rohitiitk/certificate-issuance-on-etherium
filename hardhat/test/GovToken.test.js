@@ -2,6 +2,7 @@ const {
     loadFixture,
 } = require('@nomicfoundation/hardhat-toolbox/network-helpers')
 const { expect } = require('chai')
+const { BigNumber } = require("ethers");
 
 
 describe('DAOToken Test', function () {
@@ -25,7 +26,8 @@ describe('DAOToken Test', function () {
         it("Should assign the initial supply of tokens to the owner", async function () {
             const { govToken, owner, addr1, addr2 } = await loadFixture(deployCertFixture)
             const ownerBalance = await govToken.balanceOf(owner.address);
-            expect(await govToken.totalSupply()).to.equal(ownerBalance);
+            // expect(await govToken.totalSupply()).to.equal(ownerBalance);
+            expect(await govToken.totalSupply.eq(BigNumber.from(ownerBalance))).to.be.true;
         });
     });
 
@@ -41,7 +43,8 @@ describe('DAOToken Test', function () {
         // Transfer 50 tokens from addr1 to addr2
         await govToken.connect(addr1).transfer(addr2.address, 50);
         const addr2Balance = await govToken.balanceOf(addr2.address);
-        expect(addr2Balance).to.equal(50);
+        // expect(addr2Balance).to.equal(50);
+        expect(addr2Balance.eq(BigNumber.from(50))).to.be.true;
     });
 
     describe("Voting", function () {
